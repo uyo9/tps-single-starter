@@ -1,0 +1,35 @@
+name: TPS verify
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'pro/**'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    if: github.repository != 'uyo9/tps-single-starter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/install-tps
+
+      - name: Verify
+        working-directory: pro
+        run: |
+          tps verify > verify-result.txt
+          msg="$(cat verify-result.txt)"
+          msg="${msg//$'\n'/'%0A'}"
+          if grep -q "ERROR:" verify-result.txt; then
+            echo "::error title=pro::$msg"
+            exit 1
+          elif grep -q "WARNING:" verify-result.txt; then
+            echo "::warning title=pro::$msg"
+          else
+            echo "::notice title=pro::$msg"
+          fi

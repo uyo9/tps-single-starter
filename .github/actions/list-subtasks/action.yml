@@ -1,0 +1,17 @@
+name: List subtasks
+description: ""
+inputs:
+  report-path:
+    description: 'Report path'
+    required: false
+    default: 'report.md'
+runs:
+  using: "composite"
+  steps:
+    - name: Process
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        REPORTPATH: ${{ inputs.report-path }}
+      run: |
+        python3 list.py

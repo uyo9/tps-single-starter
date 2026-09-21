@@ -1,0 +1,2 @@
+在「gen」和「solution」皆完成定稿時，刪除此檔案以啟用自動編譯測資。
+否則請在 GitHub Actions 內手動啟動。

@@ -1,0 +1,84 @@
+name: Build tests
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'pro/gen/**'
+      - 'pro/solution/**'
+      - 'pro/validator/**'
+      - 'pro/problem.json'
+      - 'pro/solutions.json'
+      - 'pro/subtasks.json'
+  workflow_dispatch:
+    inputs:
+      input:
+        description: 'Build inputs'
+        default: 'false'
+      output:
+        description: 'Build outputs'
+        default: 'false'
+      solutions:
+        description: 'Run solutions'
+        default: 'false'
+
+jobs:
+  build-tests:
+    if: github.repository != 'uyo9/tps-single-starter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/install-tps
+
+      - name: Setup git
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Build inputs and outputs
+        if: github.event_name == 'push' || inputs.input == 'true'
+        working-directory: pro
+        run: |
+          tps gen -s
+          git add gen/data
+          git add tests/*.in
+          git add tests/*.out
+          git add tests/gen_summary
+          git add tests/mapping
+          git pull
+          git diff --cached --quiet || git commit -m "Build inputs and outputs"
+          git push
+
+      - name: Build outputs
+        if: inputs.output == 'true'
+        working-directory: pro
+        run: |
+          tps gen -s --no-gen
+          git add tests/*.out
+          git pull
+          git diff --cached --quiet || git commit -m "Build outputs"
+          git push
+
+      - name: Check tests changes
+        id: tests-changes
+        run: |
+          set +e
+          git diff ${{ github.sha }}..HEAD --quiet pro/tests/*.in pro/tests/*.out
+          if [ $? -ne 0 ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run solutions
+        if: inputs.solutions == 'true' || steps.tests-changes.outputs.changed == 'true'
+        working-directory: pro
+        run: |
+          rm -f solutions-check.txt
+          tps solutions | tee -a solutions-check.txt
+          git add solutions-check.txt
+          git pull
+          git diff --cached --quiet || git commit -m "Run solutions"
+          git push

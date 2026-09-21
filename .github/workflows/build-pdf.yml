@@ -1,0 +1,62 @@
+name: Build pdf
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'pro/scripts/statement.sh'
+      - 'pro/statement/*.jpg'
+      - 'pro/statement/*.png'
+      - 'pro/statement/DISABLE_AUTO_BUILD'
+      - 'pro/statement/index.md'
+      - 'pro/problem.json'
+      - 'pro/subtasks.json'
+      - 'template.tex'
+  workflow_dispatch:
+
+jobs:
+  build-pdf:
+    if: github.repository != 'uyo9/tps-single-starter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/install-tps
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb
+          sudo dpkg -i pandoc-2.10.1-1-amd64.deb
+          sudo apt-get install texlive-xetex texlive-lang-chinese
+          sudo apt-get install fonts-noto-cjk
+          sudo apt-get install poppler-utils imagemagick
+          sudo python3 -m pip install pillow
+          rm -f pandoc-2.10.1-1-amd64.deb
+
+      - name: Setup git
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - uses: ./.github/actions/convert-images
+
+      - name: Commit images
+        run: |
+          git pull
+          git diff-index --quiet HEAD -- || git commit -m "Compress images"
+          git push
+
+      - name: Build pdf
+        run: |
+          cd pro && make statement
+          git add pro/statement/index.pdf
+
+      - name: Commit pdf
+        run: |
+          git pull
+          git diff-index --quiet HEAD -- || git commit -m "Build pdf"
+          git push

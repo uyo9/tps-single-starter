@@ -1,0 +1,10 @@
+name: Convert images
+description: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Process
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        python3 convert.py

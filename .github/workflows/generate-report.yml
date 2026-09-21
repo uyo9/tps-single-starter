@@ -1,0 +1,35 @@
+name: Generate report
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'pro/**'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    if: github.repository != 'uyo9/tps-single-starter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/check-progress
+        with:
+          report-path: report.md
+
+      - uses: ./.github/actions/list-subtasks
+        with:
+          report-path: report.md
+
+      - name: Commit files
+        run: |
+          git add report.md
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull
+          git diff-index --quiet HEAD -- || git commit -m "Generate report"
+          git push
