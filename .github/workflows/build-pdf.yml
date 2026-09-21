@@ -53,7 +53,7 @@ jobs:
       - name: Build pdf
         run: |
           cd pro && make statement
-          git add pro/statement/index.pdf
+          git add statement/index.pdf
 
       - name: Commit pdf
         run: |
