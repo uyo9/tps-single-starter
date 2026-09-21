@@ -10,7 +10,7 @@ on:
 
 jobs:
   verify:
-    if: github.repository != 'uyo9/tps-single-starter'
+    if: github.repository != 'uyo9/tps-single-starter' && github.event.created != true
     runs-on: ubuntu-latest
     timeout-minutes: 3
 
